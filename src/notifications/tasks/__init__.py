@@ -1,5 +1,0 @@
-"""
-Celery tasks for notifications.
-"""
-
-
