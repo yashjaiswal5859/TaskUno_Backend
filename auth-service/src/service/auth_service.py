@@ -47,7 +47,6 @@ class AuthService:
         role = "Product Owner"
         
         user_dict = {
-            "username": user_data.username,
             "email": user_data.email,
             "password": hashed_password,
             "firstName": user_data.firstName,
@@ -86,7 +85,6 @@ class AuthService:
             resource_type="user",
             resource_id=new_user.id,
             details={
-                "username": new_user.username,
                 "email": new_user.email,
                 "role": user_role
             }
@@ -98,7 +96,6 @@ class AuthService:
         
         return UserResponse(
             id=new_user.id,
-            username=new_user.username,
             email=new_user.email,
             firstName=new_user.firstName,
             lastName=new_user.lastName,
@@ -186,11 +183,9 @@ class AuthService:
             raise ValueError("User with this email already exists in this organization")
         
         hashed_password = get_password_hash(invite_data.password)
-        username = invite_data.email.split('@')[0]
         
         if invite_data.role == "Product Owner":
             user_dict = {
-                "username": username,
                 "email": invite_data.email,
                 "password": hashed_password,
                 "firstName": invite_data.firstName,
@@ -200,7 +195,6 @@ class AuthService:
             }
         else:
             user_dict = {
-                "username": username,
                 "email": invite_data.email,
                 "password": hashed_password,
                 "firstName": invite_data.firstName,
@@ -228,14 +222,12 @@ class AuthService:
             resource_id=new_user.id,
             details={
                 "invited_email": new_user.email,
-                "invited_role": user_role,
-                "invited_username": new_user.username
+                "invited_role": user_role
             }
         )
         
         return UserResponse(
             id=new_user.id,
-            username=new_user.username,
             email=new_user.email,
             firstName=new_user.firstName,
             lastName=new_user.lastName,
@@ -296,7 +288,6 @@ class AuthService:
         
         return UserResponse(
             id=updated_user.id,
-            username=updated_user.username,
             email=updated_user.email,
             firstName=updated_user.firstName,
             lastName=updated_user.lastName,

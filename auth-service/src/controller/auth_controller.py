@@ -113,7 +113,6 @@ async def login(
     
     user_response = UserResponse(
         id=user.id,
-        username=user.username,
         email=user.email,
         firstName=user.firstName,
         lastName=user.lastName,
@@ -160,7 +159,6 @@ async def get_profile(
     
     return UserResponse(
         id=user.id,
-        username=user.username,
         email=user.email,
         firstName=user.firstName,
         lastName=user.lastName,

@@ -103,7 +103,6 @@ class AuthRepository:
         try:
             if role == "Product Owner" or role == "admin":
                 new_user = ProductOwner()
-                new_user.username = user_data["username"]
                 new_user.email = user_data["email"]
                 new_user.password = user_data["password"]
                 new_user.firstName = user_data["firstName"]
@@ -118,7 +117,6 @@ class AuthRepository:
                 return new_user
             else:
                 new_user = Developer()
-                new_user.username = user_data["username"]
                 new_user.email = user_data["email"]
                 new_user.password = user_data["password"]
                 new_user.firstName = user_data["firstName"]

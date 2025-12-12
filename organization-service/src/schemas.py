@@ -29,7 +29,6 @@ class DeveloperList(BaseModel):
     id: int
     firstName: str
     lastName: str
-    username: str
     email: str
 
     class Config:
@@ -41,7 +40,6 @@ class ProductOwnerList(BaseModel):
     id: int
     firstName: str
     lastName: str
-    username: str
     email: str
 
     class Config:

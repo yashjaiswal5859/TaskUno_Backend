@@ -17,7 +17,7 @@ class ProductOwner(Base):
     __tablename__ = "product_owner"
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
-    username = Column(String(50))
+    email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))
 
@@ -26,7 +26,7 @@ class Developer(Base):
     __tablename__ = "developer"
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
-    username = Column(String(50))
+    email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))
 
@@ -39,18 +39,18 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[dict]:
     po = db.query(ProductOwner).filter(ProductOwner.id == user_id).first()
     if po:
         return {
-            "username": po.username,
             "firstName": po.firstName,
-            "lastName": po.lastName
+            "lastName": po.lastName,
+            "email": po.email
         }
     
     # Try Developer
     dev = db.query(Developer).filter(Developer.id == user_id).first()
     if dev:
         return {
-            "username": dev.username,
             "firstName": dev.firstName,
-            "lastName": dev.lastName
+            "lastName": dev.lastName,
+            "email": dev.email
         }
     
     return None

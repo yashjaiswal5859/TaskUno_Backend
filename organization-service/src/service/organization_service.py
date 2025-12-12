@@ -21,7 +21,6 @@ class ProductOwner(Base):
     __tablename__ = "product_owner"
     __table_args__ = {'extend_existing': True}  # Allow redefinition if needed
     id = Column(Integer, primary_key=True)
-    username = Column(String(50))
     email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))
@@ -33,7 +32,6 @@ class Developer(Base):
     __tablename__ = "developer"
     __table_args__ = {'extend_existing': True}  # Allow redefinition if needed
     id = Column(Integer, primary_key=True)
-    username = Column(String(50))
     email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))
@@ -99,7 +97,6 @@ class OrganizationService:
                         id=d['id'],
                         firstName=d.get('firstName'),
                         lastName=d.get('lastName'),
-                        username=d['username'],
                         email=d['email'],
                         organization_id=organization_id
                     )
@@ -123,7 +120,6 @@ class OrganizationService:
                     'id': dev.id,
                     'firstName': dev.firstName,
                     'lastName': dev.lastName,
-                    'username': dev.username,
                     'email': dev.email
                 }
                 for dev in developers
@@ -146,7 +142,6 @@ class OrganizationService:
                         id=po['id'],
                         firstName=po.get('firstName'),
                         lastName=po.get('lastName'),
-                        username=po['username'],
                         email=po['email'],
                         organization_id=organization_id
                     )
@@ -170,7 +165,6 @@ class OrganizationService:
                     'id': po.id,
                     'firstName': po.firstName,
                     'lastName': po.lastName,
-                    'username': po.username,
                     'email': po.email
                 }
                 for po in product_owners
@@ -218,7 +212,6 @@ class OrganizationService:
                     "id": po.id,
                     "firstName": po.firstName,
                     "lastName": po.lastName,
-                    "username": po.username,
                     "email": po.email
                 }
                 for po in product_owners
@@ -228,7 +221,6 @@ class OrganizationService:
                     "id": dev.id,
                     "firstName": dev.firstName,
                     "lastName": dev.lastName,
-                    "username": dev.username,
                     "email": dev.email
                 }
                 for dev in developers
@@ -256,7 +248,6 @@ class OrganizationService:
                             id=dev_data['id'],
                             firstName=dev_data.get('firstName'),
                             lastName=dev_data.get('lastName'),
-                            username=dev_data['username'],
                             email=dev_data['email'],
                             organization_id=organization_id
                         )
@@ -283,7 +274,6 @@ class OrganizationService:
                             id=po_data['id'],
                             firstName=po_data.get('firstName'),
                             lastName=po_data.get('lastName'),
-                            username=po_data['username'],
                             email=po_data['email'],
                             organization_id=organization_id
                         )

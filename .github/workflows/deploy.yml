@@ -1,0 +1,111 @@
+name: Build and Deploy to EC2
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Docker images
+      run: |
+        echo "🔨 Building Docker images..."
+        docker build -t api-gateway:latest ./api-gateway
+        docker build -t auth-service:latest ./auth-service
+        docker build -t organization-service:latest ./organization-service
+        docker build -t tasks-service:latest ./tasks-service
+        docker build -t projects-service:latest ./projects-service
+        docker build -t email-service:latest ./email-service
+        echo "✅ All images built successfully"
+    
+    - name: Save Docker images
+      run: |
+        echo "💾 Saving Docker images..."
+        docker save api-gateway:latest | gzip > api-gateway.tar.gz
+        docker save auth-service:latest | gzip > auth-service.tar.gz
+        docker save organization-service:latest | gzip > organization-service.tar.gz
+        docker save tasks-service:latest | gzip > tasks-service.tar.gz
+        docker save projects-service:latest | gzip > projects-service.tar.gz
+        docker save email-service:latest | gzip > email-service.tar.gz
+        echo "✅ Images saved"
+    
+    - name: Create .env file from template and secrets
+      run: |
+        echo "📝 Creating .env file from template..."
+        # Copy template
+        cp .env.template .env
+        
+        # Inject ALL SECRETS from GitHub Secrets
+        sed -i "s|^DATABASE_URL=.*|DATABASE_URL=${{ secrets.DATABASE_URL }}|g" .env
+        sed -i "s|^SUPABASE_SERVICE_ROLE_KEY=.*|SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}|g" .env
+        sed -i "s|^SECRET_KEY=.*|SECRET_KEY=${{ secrets.SECRET_KEY }}|g" .env
+        sed -i "s|^REFRESH_SECRET_KEY=.*|REFRESH_SECRET_KEY=${{ secrets.REFRESH_SECRET_KEY }}|g" .env
+        sed -i "s|^ALGORITHM=.*|ALGORITHM=${{ secrets.ALGORITHM }}|g" .env
+        sed -i "s|^ACCESS_TOKEN_EXPIRE_MINUTES=.*|ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}|g" .env
+        sed -i "s|^REFRESH_TOKEN_EXPIRE_DAYS=.*|REFRESH_TOKEN_EXPIRE_DAYS=${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS }}|g" .env
+        sed -i "s|^SMTP_USER=.*|SMTP_USER=${{ secrets.SMTP_USER }}|g" .env
+        sed -i "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}|g" .env
+        
+        # Optional overrides (if provided in secrets)
+        if [ -n "${{ secrets.REDIS_HOST }}" ]; then
+          sed -i "s|^REDIS_HOST=.*|REDIS_HOST=${{ secrets.REDIS_HOST }}|g" .env
+        fi
+        
+        if [ -n "${{ secrets.CORS_ORIGINS }}" ]; then
+          sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}|g" .env
+        fi
+        
+        echo "✅ .env file created with all secrets injected"
+    
+    - name: Copy files to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        source: "*.tar.gz,deploy.sh,.env"
+        target: "/tmp/deploy"
+        strip_components: 0
+    
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        script: |
+          cd /tmp/deploy
+          
+          echo "📦 Loading Docker images..."
+          docker load < api-gateway.tar.gz
+          docker load < auth-service.tar.gz
+          docker load < organization-service.tar.gz
+          docker load < tasks-service.tar.gz
+          docker load < projects-service.tar.gz
+          docker load < email-service.tar.gz
+          echo "✅ Images loaded"
+          
+          echo "🛑 Stopping old containers..."
+          docker stop api-gateway auth-service organization-service tasks-service projects-service email-service 2>/dev/null || true
+          docker rm api-gateway auth-service organization-service tasks-service projects-service email-service 2>/dev/null || true
+          
+          echo "🚀 Starting new containers..."
+          chmod +x deploy.sh
+          ./deploy.sh
+          
+          echo "🧹 Cleaning up..."
+          rm -f *.tar.gz
+          
+          echo "✅ Deployment complete!"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"

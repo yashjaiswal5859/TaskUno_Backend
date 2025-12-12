@@ -53,7 +53,6 @@ async def get_developers_by_organization(
                 id=dev.id,
                 firstName=dev.firstName,
                 lastName=dev.lastName,
-                username=dev.username,
                 email=dev.email
             )
             for dev in developers
@@ -93,7 +92,6 @@ async def get_product_owners_by_organization(
             id=po.id,
             firstName=po.firstName,
             lastName=po.lastName,
-            username=po.username,
             email=po.email
         )
         for po in product_owners
@@ -111,9 +109,13 @@ async def get_organization_chart(
     try:
         org_service = OrganizationService(db)
         
+        # Get org_id from JWT token - this is the source of truth
         org_id = current_user.get("org_id")
-        print(f"[DEBUG] Current user: {current_user}")
-        print(f"[DEBUG] Organization ID from token: {org_id} (type: {type(org_id)})")
+        user_id = current_user.get("id")
+        user_email = current_user.get("sub")
+        
+        print(f"[DEBUG] Current user ID: {user_id}, Email: {user_email}")
+        print(f"[DEBUG] Organization ID from JWT token: {org_id} (type: {type(org_id)})")
         
         if not org_id:
             raise HTTPException(
@@ -130,6 +132,45 @@ async def get_organization_chart(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid organization ID format: {org_id}"
                 )
+        
+        # Verify the user actually belongs to this organization
+        # This prevents users from accessing other organizations' data
+        # Import the models from the service
+        from src.service.organization_service import ProductOwner, Developer
+        
+        user_is_po = db.query(ProductOwner).filter(
+            ProductOwner.id == user_id,
+            ProductOwner.organization_id == org_id
+        ).first()
+        user_is_dev = db.query(Developer).filter(
+            Developer.id == user_id,
+            Developer.organization_id == org_id
+        ).first()
+        
+        if not user_is_po and not user_is_dev:
+            print(f"[SECURITY] User {user_id} does not belong to organization {org_id}")
+            # Check what organization the user actually belongs to
+            actual_po = db.query(ProductOwner).filter(ProductOwner.id == user_id).first()
+            actual_dev = db.query(Developer).filter(Developer.id == user_id).first()
+            actual_org_id = None
+            if actual_po:
+                actual_org_id = actual_po.organization_id
+            elif actual_dev:
+                actual_org_id = actual_dev.organization_id
+            
+            if actual_org_id and actual_org_id != org_id:
+                print(f"[SECURITY] User {user_id} belongs to organization {actual_org_id}, not {org_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"JWT token has incorrect organization ID. You belong to organization {actual_org_id}, not {org_id}"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not belong to this organization"
+                )
+        
+        print(f"[DEBUG] User {user_id} verified to belong to organization {org_id}")
         
         chart_data = org_service.get_organization_chart(org_id)
         if not chart_data:

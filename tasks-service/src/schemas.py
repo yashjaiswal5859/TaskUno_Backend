@@ -48,7 +48,6 @@ class TaskUpdate(BaseModel):
 
 class UserSchema(BaseModel):
     """User schema for task relationships."""
-    username: str
     email: str
 
     class Config:
@@ -58,7 +57,6 @@ class UserSchema(BaseModel):
 class CreatedBySchema(BaseModel):
     """Schema for created_by information."""
     id: int
-    username: str
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     email: str
@@ -70,7 +68,6 @@ class CreatedBySchema(BaseModel):
 class AssignedToSchema(BaseModel):
     """Schema for assigned_to developer information."""
     id: int
-    username: str
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     email: str
@@ -82,7 +79,6 @@ class AssignedToSchema(BaseModel):
 class ReportingToSchema(BaseModel):
     """Schema for reporting_to product owner information."""
     id: int
-    username: str
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     email: str

@@ -17,8 +17,13 @@ from src.models import Organization
 # Initialize Redis (for caching)
 initialize_redis()
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+# Create tables (handle database connection errors gracefully)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully")
+except Exception as e:
+    print(f"⚠️  Database connection error: {e}")
+    print("⚠️  Service will start but database operations may fail until connection is restored")
 
 # Create FastAPI app
 app = FastAPI(

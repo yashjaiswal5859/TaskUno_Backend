@@ -7,7 +7,6 @@ from pydantic import BaseModel, EmailStr
 
 class UserCreate(BaseModel):
     """Schema for user registration."""
-    username: str
     email: EmailStr
     firstName: str
     lastName: str
@@ -20,7 +19,6 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     """Schema for user response."""
     id: int
-    username: str
     email: str
     firstName: Optional[str]
     lastName: Optional[str]
@@ -34,7 +32,6 @@ class UserResponse(BaseModel):
 
 class UserUpdate(BaseModel):
     """Schema for user update."""
-    username: Optional[str] = None
     email: Optional[EmailStr] = None
     firstName: Optional[str] = None
     lastName: Optional[str] = None
@@ -84,7 +81,6 @@ class DeveloperList(BaseModel):
     id: int
     firstName: Optional[str]
     lastName: Optional[str]
-    username: str
     email: str
 
     class Config:
@@ -96,7 +92,6 @@ class ProductOwnerList(BaseModel):
     id: int
     firstName: Optional[str]
     lastName: Optional[str]
-    username: str
     email: str
 
     class Config:

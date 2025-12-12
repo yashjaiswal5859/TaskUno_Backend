@@ -90,12 +90,29 @@ class TaskRepository:
     
     def get_all_by_organization_id(self, organization_id: int) -> List[Task]:
         """Get all tasks for an organization (via project)."""
-        # Get project IDs for this organization first
-        project_ids = [p.id for p in self.db.query(Project.id).filter(Project.organization_id == organization_id).all()]
-        if not project_ids:
+        try:
+            # Step 1: Get all projects for this organization
+            projects = self.db.query(Project).filter(Project.organization_id == organization_id).all()
+            print(f"[DEBUG] Found {len(projects)} projects for organization_id={organization_id}")
+            
+            if not projects:
+                print(f"[DEBUG] No projects found for organization_id={organization_id}")
+                return []
+            
+            # Step 2: Extract project IDs
+            project_ids = [p.id for p in projects]
+            print(f"[DEBUG] Project IDs: {project_ids}")
+            
+            # Step 3: Get all tasks for those projects
+            tasks = self.db.query(Task).filter(Task.project_id.in_(project_ids)).all()
+            print(f"[DEBUG] Found {len(tasks)} tasks for projects {project_ids}")
+            
+            return tasks
+        except Exception as e:
+            print(f"[ERROR] Error getting tasks for organization_id={organization_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return []
-        # Then get tasks for those projects
-        return self.db.query(Task).filter(Task.project_id.in_(project_ids)).all()
     
     def get_by_id_with_org_check(self, task_id: int, organization_id: int) -> Optional[Task]:
         """Get task by ID, verifying it belongs to the organization."""

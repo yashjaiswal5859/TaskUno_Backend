@@ -8,7 +8,6 @@ from pydantic import BaseModel, EmailStr
 
 class UserSchema(BaseModel):
     """User schema for project relationships."""
-    username: str
     email: EmailStr
 
     class Config:
@@ -37,9 +36,9 @@ class ProjectUpdate(BaseModel):
 
 class CreatedBySchema(BaseModel):
     """Schema for created_by information."""
-    username: str
     firstName: Optional[str] = None
     lastName: Optional[str] = None
+    email: Optional[str] = None
 
     class Config:
         from_attributes = True

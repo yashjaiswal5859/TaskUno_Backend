@@ -46,7 +46,15 @@ class ProjectRepository:
     
     def get_all_by_organization_id(self, organization_id: int) -> List[Project]:
         """Get all projects for an organization."""
-        return self.db.query(Project).filter(Project.organization_id == organization_id).all()
+        try:
+            projects = self.db.query(Project).filter(Project.organization_id == organization_id).all()
+            print(f"[DEBUG] Found {len(projects)} projects for organization_id={organization_id}")
+            return projects
+        except Exception as e:
+            print(f"[ERROR] Error getting projects for organization_id={organization_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return []
     
     def get_by_id_with_org_check(self, project_id: int, organization_id: int) -> Optional[Project]:
         """Get project by ID, verifying it belongs to the organization."""

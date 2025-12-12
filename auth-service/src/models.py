@@ -23,7 +23,6 @@ class ProductOwner(Base):
     __tablename__ = "product_owner"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String(50))
     email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))
@@ -47,7 +46,6 @@ class Developer(Base):
     __tablename__ = "developer"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String(50))
     email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))

@@ -19,7 +19,6 @@ class ProductOwner(Base):
     __tablename__ = "product_owner"
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
-    username = Column(String(50))
     email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))
@@ -29,7 +28,6 @@ class Developer(Base):
     __tablename__ = "developer"
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
-    username = Column(String(50))
     email = Column(String(255))
     firstName = Column(String(50))
     lastName = Column(String(50))
@@ -44,7 +42,6 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[dict]:
     if po:
         return {
             "id": po.id,
-            "username": po.username,
             "email": po.email,
             "firstName": po.firstName,
             "lastName": po.lastName
@@ -55,7 +52,6 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[dict]:
     if dev:
         return {
             "id": dev.id,
-            "username": dev.username,
             "email": dev.email,
             "firstName": dev.firstName,
             "lastName": dev.lastName
@@ -70,7 +66,6 @@ def get_developer_by_id(db: Session, developer_id: int) -> Optional[dict]:
     if dev:
         return {
             "id": dev.id,
-            "username": dev.username,
             "email": dev.email,
             "firstName": dev.firstName,
             "lastName": dev.lastName
@@ -84,7 +79,6 @@ def get_product_owner_by_id(db: Session, po_id: int) -> Optional[dict]:
     if po:
         return {
             "id": po.id,
-            "username": po.username,
             "email": po.email,
             "firstName": po.firstName,
             "lastName": po.lastName
@@ -318,18 +312,40 @@ async def update_task_by_id(
             detail="User does not belong to an organization"
         )
     
+    # Authorization check: Get the task first to check permissions
+    task_service = TaskService(database)
+    task = task_service.get_task_by_id(task_id, current_user["org_id"])
+    
+    user_role = current_user.get("role", "Developer")
+    user_id = current_user["id"]
+    
+    # Check authorization:
+    # 1. Product Owners and admins can update any task
+    # 2. Developers can only update tasks assigned to them
+    if user_role != "Product Owner" and user_role != "admin":
+        if user_role == "Developer":
+            if not task.assigned_to or task.assigned_to != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only update tasks assigned to you"
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only Product Owners and assigned Developers can update tasks"
+            )
+    
     # Get token from Authorization header
     token = None
     auth_header = http_request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
     
-    task_service = TaskService(database)
     updated_task = await task_service.update_task(
         task_id, 
         request, 
-        current_user.get("role", "Developer"), 
-        current_user["id"], 
+        user_role, 
+        user_id, 
         current_user["org_id"],
         token
     )

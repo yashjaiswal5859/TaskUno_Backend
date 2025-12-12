@@ -223,7 +223,27 @@ class TaskService:
         # Debug: print what we're updating
         print(f"[DEBUG] Updating task {task_id} with: {update_dict}")
         
-        # Convert dueDate from date to datetime if present
+        # Developers can only update status field - restrict before processing other fields
+        if user_role == "Developer":
+            # Check if any field other than 'status' is being updated
+            allowed_fields = {'status'}
+            update_fields = set(update_dict.keys())
+            # Reject if trying to update any field other than status
+            if not update_fields.issubset(allowed_fields):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Developers can only update the status field"
+                )
+            # Ensure status is being updated (not just other fields)
+            if 'status' not in update_dict:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Developers can only update the status field"
+                )
+            # For Developers, only keep status in update_dict (remove any other fields)
+            update_dict = {'status': update_dict.get('status', old_status)}
+        
+        # Convert dueDate from date to datetime if present (only for Product Owners)
         # Pydantic converts the string to a date object, so we need to convert date to datetime
         if 'dueDate' in update_dict and update_dict['dueDate'] is not None:
             try:
@@ -249,14 +269,6 @@ class TaskService:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid date format for dueDate: {update_dict.get('dueDate')}. Expected YYYY-MM-DD. Error: {str(e)}"
-                )
-        
-        # Developers can only update status
-        if user_role == "Developer":
-            if len(update_dict) > 1 or 'status' not in update_dict:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Permission denied"
                 )
         
         # Validate assigned_to if being updated
