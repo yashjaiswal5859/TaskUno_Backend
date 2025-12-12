@@ -45,7 +45,23 @@ jobs:
         cp .env.template .env
         
         # Inject ALL SECRETS from GitHub Secrets
-        sed -i "s|^DATABASE_URL=.*|DATABASE_URL=${{ secrets.DATABASE_URL }}|g" .env
+        # Handle DATABASE_URL - if it's empty or starts with https://, clear it to use SUPABASE_URL instead
+        if [ -n "${{ secrets.DATABASE_URL }}" ] && [[ "${{ secrets.DATABASE_URL }}" =~ ^postgresql:// ]]; then
+          sed -i "s|^DATABASE_URL=.*|DATABASE_URL=${{ secrets.DATABASE_URL }}|g" .env
+        else
+          # Clear DATABASE_URL so it will be built from SUPABASE_URL + SUPABASE_DB_PASSWORD
+          sed -i "s|^DATABASE_URL=.*|DATABASE_URL=|g" .env
+        fi
+        
+        # Inject Supabase credentials (for building DATABASE_URL if not provided)
+        if [ -n "${{ secrets.SUPABASE_URL }}" ]; then
+          sed -i "s|^SUPABASE_URL=.*|SUPABASE_URL=${{ secrets.SUPABASE_URL }}|g" .env
+        fi
+        
+        if [ -n "${{ secrets.SUPABASE_DB_PASSWORD }}" ]; then
+          sed -i "s|^SUPABASE_DB_PASSWORD=.*|SUPABASE_DB_PASSWORD=${{ secrets.SUPABASE_DB_PASSWORD }}|g" .env
+        fi
+        
         sed -i "s|^SUPABASE_SERVICE_ROLE_KEY=.*|SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}|g" .env
         sed -i "s|^SECRET_KEY=.*|SECRET_KEY=${{ secrets.SECRET_KEY }}|g" .env
         sed -i "s|^REFRESH_SECRET_KEY=.*|REFRESH_SECRET_KEY=${{ secrets.REFRESH_SECRET_KEY }}|g" .env
