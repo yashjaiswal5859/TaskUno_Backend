@@ -230,7 +230,7 @@ async def health_check():
         "service": "api-gateway",
         "port": 8000,
         "services": services_status
-    }
+    }   
 
 async def supabase_keep_alive():
     """Background task to keep Supabase awake by calling health API daily."""
