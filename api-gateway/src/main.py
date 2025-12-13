@@ -98,19 +98,6 @@ async def proxy_request(
                 if key_lower not in excluded_headers:
                     filtered_headers[key] = value
             
-            # Filter out headers that expose internal service information
-            filtered_headers = {}
-            excluded_headers = {
-                "location", "server", "x-forwarded-for", 
-                "x-forwarded-host", "x-forwarded-proto"
-            }
-            
-            for key, value in response.headers.items():
-                key_lower = key.lower()
-                # Skip headers that might expose internal URLs or service info
-                if key_lower not in excluded_headers:
-                    filtered_headers[key] = value
-            
             # Return response with filtered headers
             return Response(
                 content=response.content,
@@ -231,40 +218,6 @@ async def health_check():
         "port": 8000,
         "services": services_status
     }   
-
-async def supabase_keep_alive():
-    """Background task to keep Supabase awake by calling health API daily."""
-    SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hhbokzrbhxcmuapzwjao.supabase.co")
-    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
-    
-    # Wait 1 minute after startup before first call
-    await asyncio.sleep(60)
-    
-    while True:
-        try:
-            # Call Supabase REST API health endpoint
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(
-                    f"{SUPABASE_URL}/rest/v1/",
-                    headers={
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Content-Type": "application/json"
-                    }
-                )
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ Supabase keep-alive: HTTP {response.status_code}")
-        except Exception as e:
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠️  Supabase keep-alive error: {str(e)}")
-        
-        # Wait 24 hours (86400 seconds) before next call
-        await asyncio.sleep(86400)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Start background tasks on startup."""
-    # Start Supabase keep-alive task
-    asyncio.create_task(supabase_keep_alive())
-    print("✅ Supabase keep-alive task started (will run daily)")
 
 async def supabase_keep_alive():
     """Background task to keep Supabase awake by calling health API daily."""
