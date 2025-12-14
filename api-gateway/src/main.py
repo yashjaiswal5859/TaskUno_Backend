@@ -13,6 +13,8 @@ import asyncio
 from datetime import datetime
 
 from common.middleware.rate_limiter import setup_rate_limiter
+from common.database.db import engine
+from sqlalchemy import text
 
 # Service URLs from environment variables
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8001")
@@ -220,30 +222,30 @@ async def health_check():
         "services": services_status
     }   
 
+def _execute_db_keep_alive():
+    """Synchronous function to execute database keep-alive query."""
+    with engine.connect() as connection:
+        result = connection.execute(text("SELECT 1 as keep_alive, NOW() as timestamp"))
+        row = result.fetchone()
+        return row[1]  # Return timestamp
+
 async def supabase_keep_alive():
-    """Background task to keep Supabase awake by calling health API daily."""
-    SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hhbokzrbhxcmuapzwjao.supabase.co")
-    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
-    
+    """Background task to keep database connection active by querying DB periodically."""
     # Wait 1 minute after startup before first call
     await asyncio.sleep(60)
     
     while True:
         try:
-            # Call Supabase REST API health endpoint
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(
-                    f"{SUPABASE_URL}/rest/v1/",
-                    headers={
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Content-Type": "application/json"
-                    }
-                )
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ Supabase keep-alive: HTTP {response.status_code}")
+            # Execute a simple query to keep database connection active
+            # This prevents the database from going to sleep
+            # Run in executor to avoid blocking the event loop
+            loop = asyncio.get_event_loop()
+            db_timestamp = await loop.run_in_executor(None, _execute_db_keep_alive)
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ Database keep-alive: Query successful (DB timestamp: {db_timestamp})")
         except Exception as e:
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠️  Supabase keep-alive error: {str(e)}")
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠️  Database keep-alive error: {str(e)}")
         
-        # Wait 24 hours (86400 seconds) before next call
+        # Wait 24 hours (86400 seconds) before next call - daily keep-alive
         await asyncio.sleep(86400)
 
 
@@ -252,7 +254,7 @@ async def startup_event():
     """Start background tasks on startup."""
     # Start Supabase keep-alive task
     asyncio.create_task(supabase_keep_alive())
-    print("✅ Supabase keep-alive task started (will run daily)")
+    print("✅ Database keep-alive task started (will run daily to keep DB active)")
 
 
 if __name__ == "__main__":
