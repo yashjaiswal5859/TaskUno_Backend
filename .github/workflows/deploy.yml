@@ -74,11 +74,22 @@ jobs:
         # Optional overrides (if provided in secrets)
         if [ -n "${{ secrets.REDIS_HOST }}" ]; then
           sed -i "s|^REDIS_HOST=.*|REDIS_HOST=${{ secrets.REDIS_HOST }}|g" .env
+        else
+          # Default to container name for Docker networking
+          sed -i "s|^REDIS_HOST=.*|REDIS_HOST=redis|g" .env
         fi
         
         if [ -n "${{ secrets.CORS_ORIGINS }}" ]; then
           sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}|g" .env
         fi
+        
+        # Service URLs (use container names for Docker networking)
+        # These ensure containers can communicate via Docker network
+        sed -i "s|^AUTH_SERVICE_URL=.*|AUTH_SERVICE_URL=http://auth-service:8001|g" .env
+        sed -i "s|^ORGANIZATION_SERVICE_URL=.*|ORGANIZATION_SERVICE_URL=http://organization-service:8002|g" .env
+        sed -i "s|^TASKS_SERVICE_URL=.*|TASKS_SERVICE_URL=http://tasks-service:8003|g" .env
+        sed -i "s|^PROJECTS_SERVICE_URL=.*|PROJECTS_SERVICE_URL=http://projects-service:8004|g" .env
+        sed -i "s|^EMAIL_SERVICE_URL=.*|EMAIL_SERVICE_URL=http://email-service:8005|g" .env
         
         echo "✅ .env file created with all secrets injected"
     

@@ -3,12 +3,22 @@
 # Load environment variables
 source .env
 
+# Create Docker network if it doesn't exist
+if ! docker network ls | grep -q taskuno-network; then
+  echo "🌐 Creating Docker network..."
+  docker network create taskuno-network
+  echo "✅ Network created"
+else
+  echo "✅ Network already exists"
+fi
+
 # Start Redis container (if not running)
 if ! docker ps | grep -q redis; then
   echo "🔴 Starting Redis container..."
   docker run -d \
     --name redis \
     --restart unless-stopped \
+    --network taskuno-network \
     -p 6379:6379 \
     redis:7-alpine
   echo "✅ Redis started"
@@ -21,6 +31,7 @@ echo "🚀 Starting API Gateway..."
 docker run -d \
   --name api-gateway \
   --restart unless-stopped \
+  --network taskuno-network \
   -p 8000:8000 \
   --env-file .env \
   api-gateway:latest
@@ -30,6 +41,7 @@ echo "🚀 Starting Auth Service..."
 docker run -d \
   --name auth-service \
   --restart unless-stopped \
+  --network taskuno-network \
   -p 8001:8001 \
   --env-file .env \
   auth-service:latest
@@ -39,6 +51,7 @@ echo "🚀 Starting Organization Service..."
 docker run -d \
   --name organization-service \
   --restart unless-stopped \
+  --network taskuno-network \
   -p 8002:8002 \
   --env-file .env \
   organization-service:latest
@@ -48,6 +61,7 @@ echo "🚀 Starting Tasks Service..."
 docker run -d \
   --name tasks-service \
   --restart unless-stopped \
+  --network taskuno-network \
   -p 8003:8003 \
   --env-file .env \
   tasks-service:latest
@@ -57,6 +71,7 @@ echo "🚀 Starting Projects Service..."
 docker run -d \
   --name projects-service \
   --restart unless-stopped \
+  --network taskuno-network \
   -p 8004:8004 \
   --env-file .env \
   projects-service:latest
@@ -66,6 +81,7 @@ echo "🚀 Starting Email Service..."
 docker run -d \
   --name email-service \
   --restart unless-stopped \
+  --network taskuno-network \
   -p 8005:8005 \
   --env-file .env \
   email-service:latest
