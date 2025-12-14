@@ -22,8 +22,8 @@ engine = create_engine(
     database_url,
     connect_args=connect_args,
     pool_pre_ping=True,  # Verify connections before using
-    pool_size=5,  # Connection pool size
-    max_overflow=10  # Max overflow connections
+    pool_size=1,  # Connection pool size (reduced for Supabase 15 connection limit)
+    max_overflow=2  # Max overflow connections (reduced for Supabase 15 connection limit)
 )
 
 # Create session factory
