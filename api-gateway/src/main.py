@@ -133,15 +133,10 @@ def get_service_url(path: str) -> tuple[str, str]:
         # Normalize prefix
         prefix_norm = prefix if prefix.startswith("/") else "/" + prefix
         if path.startswith(prefix_norm):
-            # Forward the full path to the service (services have prefix in router)
-            # So /project becomes /project, /project/123 becomes /project/123
-            remaining_path = path[len(prefix_norm):]
-            # Ensure remaining path starts with / (or is empty, which becomes /)
-            if not remaining_path:
-                remaining_path = "/"
-            elif not remaining_path.startswith("/"):
-                remaining_path = "/" + remaining_path
-            return service_url, remaining_path
+            # Forward the FULL path to the service
+            # Services have prefix in router, but we need to send the full path
+            # So /organization/ stays as /organization/, /organization/123 stays as /organization/123
+            return service_url, path
     
     # Default to auth service for unknown routes
     return AUTH_SERVICE_URL, path
