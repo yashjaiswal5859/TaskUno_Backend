@@ -16,9 +16,9 @@ EXPOSE 8000
 CMD sh -c '\
   if [ -n "$NEW_RELIC_LICENSE_KEY" ] && [ -f newrelic.ini ]; then \
     echo "✅ Starting app with New Relic..."; \
-    exec newrelic-admin run-program -c newrelic.ini uvicorn src.main:app --host 0.0.0.0 --port 8000; \
+    exec newrelic-admin run-program -c newrelic.ini python -m uvicorn src.main:app --host 0.0.0.0 --port 8000; \
   else \
     echo "⚠️  Starting app WITHOUT New Relic..."; \
-    exec uvicorn src.main:app --host 0.0.0.0 --port 8000; \
+    exec python -m uvicorn src.main:app --host 0.0.0.0 --port 8000; \
   fi'
 

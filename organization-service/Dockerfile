@@ -17,10 +17,10 @@ EXPOSE 8002
 CMD sh -c '\
   if [ -n "$NEW_RELIC_LICENSE_KEY" ] && [ -f newrelic.ini ]; then \
     echo "✅ Starting app with New Relic..."; \
-    exec newrelic-admin run-program -c newrelic.ini uvicorn src.main:app --host 0.0.0.0 --port 8002; \
+    exec newrelic-admin run-program -c newrelic.ini python -m uvicorn src.main:app --host 0.0.0.0 --port 8002; \
   else \
     echo "⚠️  Starting app WITHOUT New Relic..."; \
-    exec uvicorn src.main:app --host 0.0.0.0 --port 8002; \
+    exec python -m uvicorn src.main:app --host 0.0.0.0 --port 8002; \
   fi'
 
 
