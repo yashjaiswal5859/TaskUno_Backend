@@ -23,3 +23,4 @@ sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.0
 pydantic[email]
 redis>=5.0.0
+newrelic

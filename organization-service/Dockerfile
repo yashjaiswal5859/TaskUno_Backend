@@ -13,4 +13,4 @@ COPY . .
 EXPOSE 8002
 
 # Run the application
-CMD ["python3", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["newrelic-admin", "run-program","python3", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8002"]
