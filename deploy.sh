@@ -86,6 +86,25 @@ docker run -d \
   --env-file .env \
   email-service:latest
 
+# Start New Relic Infrastructure Agent (if not running)
+if ! docker ps | grep -q newrelic-infra; then
+  echo "📊 Starting New Relic Infrastructure Agent..."
+  docker run -d \
+    --name newrelic-infra \
+    --privileged \
+    --network host \
+    --pid host \
+    --restart unless-stopped \
+    -e NRIA_LICENSE_KEY="${NEW_RELIC_LICENSE_KEY}" \
+    -e NRIA_DISPLAY_NAME=taskuno-host \
+    -v /:/host:ro \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    newrelic/infrastructure:latest
+  echo "✅ New Relic started"
+else
+  echo "✅ New Relic already running"
+fi
+
 echo "✅ All services started!"
 echo ""
 echo "📊 Container Status:"

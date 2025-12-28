@@ -71,6 +71,11 @@ jobs:
         sed -i "s|^SMTP_USER=.*|SMTP_USER=${{ secrets.SMTP_USER }}|g" .env
         sed -i "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}|g" .env
         
+        # New Relic License Key (if provided)
+        if [ -n "${{ secrets.NEW_RELIC_LICENSE_KEY }}" ]; then
+          sed -i "s|^NEW_RELIC_LICENSE_KEY=.*|NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }}|g" .env
+        fi
+        
         # Optional overrides (if provided in secrets)
         if [ -n "${{ secrets.REDIS_HOST }}" ]; then
           sed -i "s|^REDIS_HOST=.*|REDIS_HOST=${{ secrets.REDIS_HOST }}|g" .env
