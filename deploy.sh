@@ -20,6 +20,8 @@ if ! docker ps | grep -q redis; then
     --restart unless-stopped \
     --network taskuno-network \
     -p 6379:6379 \
+    --memory="64m" \
+    --memory-swap="128m" \
     redis:7-alpine
   echo "✅ Redis started"
 else
@@ -34,6 +36,8 @@ docker run -d \
   --network taskuno-network \
   -p 8000:8000 \
   --env-file .env \
+  --memory="120m" \
+  --memory-swap="200m" \
   api-gateway:latest
 
 # Start Auth Service
@@ -44,6 +48,8 @@ docker run -d \
   --network taskuno-network \
   -p 8001:8001 \
   --env-file .env \
+  --memory="120m" \
+  --memory-swap="200m" \
   auth-service:latest
 
 # Start Organization Service
@@ -54,6 +60,8 @@ docker run -d \
   --network taskuno-network \
   -p 8002:8002 \
   --env-file .env \
+  --memory="120m" \
+  --memory-swap="200m" \
   organization-service:latest
 
 # Start Tasks Service
@@ -64,6 +72,8 @@ docker run -d \
   --network taskuno-network \
   -p 8003:8003 \
   --env-file .env \
+  --memory="120m" \
+  --memory-swap="200m" \
   tasks-service:latest
 
 # Start Projects Service
@@ -74,6 +84,8 @@ docker run -d \
   --network taskuno-network \
   -p 8004:8004 \
   --env-file .env \
+  --memory="120m" \
+  --memory-swap="200m" \
   projects-service:latest
 
 # Start Email Service
@@ -84,6 +96,8 @@ docker run -d \
   --network taskuno-network \
   -p 8005:8005 \
   --env-file .env \
+  --memory="120m" \
+  --memory-swap="200m" \
   email-service:latest
 
 # Start New Relic Infrastructure Agent (if not running)
@@ -95,6 +109,8 @@ if ! docker ps | grep -q newrelic-infra; then
     --network host \
     --pid host \
     --restart unless-stopped \
+    --memory="128m" \
+    --memory-swap="256m" \
     -e NRIA_LICENSE_KEY="${NEW_RELIC_LICENSE_KEY}" \
     -e NRIA_DISPLAY_NAME=taskuno-host \
     -v /:/host:ro \

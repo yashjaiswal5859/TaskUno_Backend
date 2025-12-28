@@ -1,3 +1,4 @@
+# Memory limit: 120MB (set via --memory flag in docker run or mem_limit in docker-compose)
 FROM python:3.11-slim
 
 WORKDIR /app

@@ -1,3 +1,5 @@
+# Memory limit: 120MB (set via --memory flag in docker run or mem_limit in docker-compose)
+# For 1GB RAM system: 6 services @ 120MB each + Redis 64MB + New Relic 128MB = ~872MB total
 FROM python:3.11-slim
 
 WORKDIR /app
