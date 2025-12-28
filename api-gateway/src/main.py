@@ -11,7 +11,9 @@ import time
 import os
 import asyncio
 from datetime import datetime
-
+if os.getenv('NEW_RELIC_LICENSE_KEY') and os.path.exists('newrelic.ini'):
+    import newrelic.agent
+    newrelic.agent.initialize('newrelic.ini')
 from common.middleware.rate_limiter import setup_rate_limiter
 
 # Service URLs from environment variables
