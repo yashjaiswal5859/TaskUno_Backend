@@ -12,6 +12,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
 
+# Initialize New Relic if license key is set
+if os.getenv('NEW_RELIC_LICENSE_KEY') and os.path.exists('newrelic.ini'):
+    import newrelic.agent
+    newrelic.agent.initialize('newrelic.ini')
+
 # Load .env file from email-service directory
 env_path = Path(__file__).parent.parent.parent / ".env"
 if env_path.exists():

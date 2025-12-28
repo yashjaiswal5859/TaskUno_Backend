@@ -5,6 +5,12 @@ Port: 8001
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
+import os
+
+# Initialize New Relic if license key is set
+if os.getenv('NEW_RELIC_LICENSE_KEY') and os.path.exists('newrelic.ini'):
+    import newrelic.agent
+    newrelic.agent.initialize('newrelic.ini')
 
 from common.config.settings import settings, get_cors_origins
 from common.database.db import engine, Base

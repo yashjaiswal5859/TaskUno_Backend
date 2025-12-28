@@ -12,12 +12,11 @@ COPY . .
 # Expose port
 EXPOSE 8004
 
-# Run the application - with New Relic if license key is set, otherwise without
+# Run the application - New Relic is initialized in code if license key is set
 CMD sh -c '\
   if [ -n "$NEW_RELIC_LICENSE_KEY" ] && [ -f newrelic.ini ]; then \
-    echo "✅ Starting app with New Relic..."; \
-    exec newrelic-admin run-program -c newrelic.ini /usr/local/bin/uvicorn src.main:app --host 0.0.0.0 --port 8004; \
+    echo "✅ Starting app with New Relic (initialized in code)..."; \
   else \
     echo "⚠️  Starting app WITHOUT New Relic..."; \
-    exec uvicorn src.main:app --host 0.0.0.0 --port 8004; \
-  fi'
+  fi; \
+  exec uvicorn src.main:app --host 0.0.0.0 --port 8004'
