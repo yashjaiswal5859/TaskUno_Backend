@@ -13,4 +13,11 @@ COPY . .
 EXPOSE 8003
 
 # Run the application - with New Relic if license key is set, otherwise without
-CMD sh -c 'if [ -n "$NEW_RELIC_LICENSE_KEY" ] && [ -f newrelic.ini ]; then newrelic-admin run-program -c newrelic.ini python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8003; else echo "⚠️  Running without New Relic"; python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8003; fi'
+CMD sh -c '\
+  if [ -n "$NEW_RELIC_LICENSE_KEY" ] && [ -f newrelic.ini ]; then \
+    echo "✅ Starting with New Relic..."; \
+    exec newrelic-admin run-program -c newrelic.ini python -m uvicorn src.main:app --host 0.0.0.0 --port 8003; \
+  else \
+    echo "⚠️  Running without New Relic"; \
+    exec python -m uvicorn src.main:app --host 0.0.0.0 --port 8003; \
+  fi'
