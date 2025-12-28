@@ -100,7 +100,7 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         port: 22
-        source: "*.tar.gz,deploy.sh,.env"
+        source: "*.tar.gz,deploy.sh,.env,docker-compose.yml,newrelic-infra.yml,newrelic-infra.dockerfile"
         target: "/tmp/deploy"
         strip_components: 0
     
