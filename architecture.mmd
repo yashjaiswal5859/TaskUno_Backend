@@ -1,0 +1,91 @@
+graph TB
+    subgraph "Clients (Vercel)"
+        C1[Client 1<br/>https://taskuno-frontend.vercel.app]
+        C2[Client 2<br/>https://taskuno-frontend.vercel.app]
+        C3[Client N<br/>Multiple Users]
+    end
+
+    subgraph "Internet"
+        HTTPS[HTTPS/TLS 1.3<br/>Port 443<br/>Encrypted Connection]
+    end
+
+    subgraph "AWS EC2 Instance (Ubuntu 24.04)"
+        subgraph "Nginx Reverse Proxy"
+            NGINX["Nginx 1.24.0<br/>Port 443 → 8000<br/>SSL Termination<br/>CORS Headers<br/>Rate Limiting<br/>X-Forwarded-For"]
+        end
+
+        subgraph "Docker Network: taskuno-network"
+            subgraph "API Gateway Container"
+                GATEWAY["API Gateway<br/>Port 8000<br/>FastAPI/Uvicorn<br/>Request Routing<br/>Health Aggregation<br/>CORS Middleware"]
+            end
+
+            subgraph "Microservices Containers"
+                AUTH["Auth Service<br/>Port 8001<br/>FastAPI<br/>JWT Generation<br/>User Management"]
+                ORG["Organization Service<br/>Port 8002<br/>FastAPI<br/>Org CRUD<br/>Team Management"]
+                TASKS["Tasks Service<br/>Port 8003<br/>FastAPI<br/>Task CRUD<br/>Task Logs"]
+                PROJECTS["Projects Service<br/>Port 8004<br/>FastAPI<br/>Project CRUD<br/>Project Management"]
+                EMAIL["Email Service<br/>Port 8005<br/>FastAPI<br/>Email Queue<br/>SMTP"]
+            end
+
+            subgraph "Cache & Queue"
+                REDIS["Redis Container<br/>Port 6379<br/>Token Blacklist<br/>Rate Limiting<br/>Email Queue<br/>Bull Queue"]
+            end
+        end
+    end
+
+    subgraph "External Services"
+        SUPABASE[("Supabase PostgreSQL<br/>Connection Pooler<br/>Port 5432<br/>SSL Required<br/>pool_size=1<br/>max_overflow=2")]
+    end
+
+    %% Client to HTTPS
+    C1 -->|"HTTPS Request<br/>Headers: Origin, Authorization<br/>Content-Type, Cookie"| HTTPS
+    C2 -->|"HTTPS Request"| HTTPS
+    C3 -->|"HTTPS Request"| HTTPS
+    HTTPS -->|"TLS Encrypted<br/>SSL/TLS 1.3"| NGINX
+
+    %% Nginx to Gateway
+    NGINX -->|"Proxy Pass<br/>http://localhost:8000<br/>Headers: X-Forwarded-For<br/>X-Real-IP, X-Forwarded-Proto"| GATEWAY
+
+    %% Gateway to Services
+    GATEWAY -->|"/auth/*<br/>http://auth-service:8001"| AUTH
+    GATEWAY -->|"/organization/*<br/>http://organization-service:8002"| ORG
+    GATEWAY -->|"/task/*<br/>http://tasks-service:8003"| TASKS
+    GATEWAY -->|"/project/*<br/>http://projects-service:8004"| PROJECTS
+    GATEWAY -->|"/email/*<br/>http://email-service:8005"| EMAIL
+
+    %% Services to Redis
+    AUTH -->|"Token Blacklist<br/>Rate Limiting"| REDIS
+    ORG -->|"Caching"| REDIS
+    TASKS -->|"Caching"| REDIS
+    PROJECTS -->|"Caching"| REDIS
+    EMAIL -->|"Email Queue<br/>Bull Queue"| REDIS
+
+    %% Services to Database
+    AUTH -->|"SQLAlchemy ORM<br/>Connection Pool<br/>pool_size=1<br/>max_overflow=2"| SUPABASE
+    ORG -->|"SQLAlchemy ORM<br/>Connection Pool"| SUPABASE
+    TASKS -->|"SQLAlchemy ORM<br/>Connection Pool"| SUPABASE
+    PROJECTS -->|"SQLAlchemy ORM<br/>Connection Pool"| SUPABASE
+
+    %% Styling
+    classDef client fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:#000
+    classDef nginx fill:#ff9800,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef gateway fill:#4caf50,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef service fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef redis fill:#f44336,stroke:#b71c1c,stroke-width:2px,color:#fff
+    classDef db fill:#9c27b0,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef https fill:#00bcd4,stroke:#006064,stroke-width:2px,color:#fff
+
+    class C1,C2,C3 client
+    class NGINX nginx
+    class GATEWAY gateway
+    class AUTH,ORG,TASKS,PROJECTS,EMAIL service
+    class REDIS redis
+    class SUPABASE db
+    class HTTPS https
+
+
+
+
+
+
+

@@ -12,5 +12,5 @@ COPY . .
 # Expose port
 EXPOSE 8005
 
-# Run the application with New Relic
-CMD ["newrelic-admin", "run-program", "-c", "newrelic.ini", "python3", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8005"]
+# Run the application - with New Relic if license key is set, otherwise without
+CMD sh -c 'if [ -n "$NEW_RELIC_LICENSE_KEY" ] && [ -f newrelic.ini ]; then newrelic-admin run-program -c newrelic.ini python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8005; else echo "⚠️  Running without New Relic"; python3 -m uvicorn src.main:app --host 0.0.0.0 --port 8005; fi'
