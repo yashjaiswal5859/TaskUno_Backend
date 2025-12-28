@@ -6,11 +6,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
 import os
+from pathlib import Path
 
-# Initialize New Relic if license key is set
-if os.getenv('NEW_RELIC_LICENSE_KEY') and os.path.exists('newrelic.ini'):
+# Initialize New Relic if license key is set (use absolute path to config)
+newrelic_config = Path(__file__).parent.parent / 'newrelic.ini'
+if os.getenv('NEW_RELIC_LICENSE_KEY') and newrelic_config.exists():
     import newrelic.agent
-    newrelic.agent.initialize('newrelic.ini')
+    newrelic.agent.initialize(str(newrelic_config))
 
 from common.config.settings import settings, get_cors_origins
 from common.database.db import engine, Base
