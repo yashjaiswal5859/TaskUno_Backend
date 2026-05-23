@@ -6,6 +6,10 @@ from datetime import datetime, date
 from fastapi import APIRouter, Depends, status, Response, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, Integer, String
+import logging
+
+logger = logging.getLogger(__name__)
+
 from common.database.db import get_db, Base
 
 from common.auth.jwt import get_current_user

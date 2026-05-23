@@ -4,6 +4,9 @@ Controller (API routes) for organization endpoints.
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
+import logging
+
+logger = logging.getLogger(__name__)
 
 from common.database.db import get_db
 from common.auth.jwt import get_current_user

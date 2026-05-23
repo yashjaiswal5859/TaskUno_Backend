@@ -3,6 +3,9 @@ Service layer for organization business logic.
 """
 from typing import Optional
 from sqlalchemy.orm import Session
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.models import Organization
 from src.repository.organization_repository import OrganizationRepository

@@ -3,6 +3,9 @@ Repository layer for task database operations.
 """
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.models import Task, TaskLog
 

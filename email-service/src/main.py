@@ -6,6 +6,7 @@ Runs email consumer in background thread while serving HTTP API.
 import sys
 import os
 import threading
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -18,7 +19,7 @@ if os.getenv('NEW_RELIC_LICENSE_KEY') and newrelic_config.exists():
     import newrelic.agent
     newrelic.agent.initialize(str(newrelic_config))
 
-# Load .env file from email-service directory
+# Load .env file from root directory
 env_path = Path(__file__).parent.parent.parent / ".env"
 if env_path.exists():
     load_dotenv(env_path)
@@ -27,6 +28,12 @@ else:
     # Try current directory
     load_dotenv()
     print("⚠️  .env file not found, using environment variables or defaults")
+
+# Configure logging for the service
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s %(levelname)s [%(name)s] %(message)s")
+logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
+logger = logging.getLogger(__name__)
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

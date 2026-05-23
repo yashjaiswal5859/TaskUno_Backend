@@ -1,5 +1,13 @@
 version: "3.8"
 
+x-logging: &default-logging
+  driver: awslogs
+  options:
+    awslogs-region: ${AWS_REGION}
+    awslogs-group: ${CLOUDWATCH_LOG_GROUP}
+    awslogs-create-group: "true"
+    awslogs-stream-prefix: ${CLOUDWATCH_LOG_STREAM_PREFIX}
+
 services:
   # -----------------------------
   # API Gateway
@@ -11,6 +19,7 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    logging: *default-logging
     depends_on:
       - auth-service
       - organization-service
@@ -29,6 +38,7 @@ services:
     container_name: auth-service
     env_file:
       - .env
+    logging: *default-logging
     restart: always
     mem_limit: 120m
     memswap_limit: 200m
@@ -41,6 +51,7 @@ services:
     container_name: organization-service
     env_file:
       - .env
+    logging: *default-logging
     restart: always
     mem_limit: 120m
     memswap_limit: 200m
@@ -53,6 +64,7 @@ services:
     container_name: tasks-service
     env_file:
       - .env
+    logging: *default-logging
     restart: always
     mem_limit: 120m
     memswap_limit: 200m
@@ -65,6 +77,7 @@ services:
     container_name: projects-service
     env_file:
       - .env
+    logging: *default-logging
     restart: always
     mem_limit: 120m
     memswap_limit: 200m
@@ -77,6 +90,7 @@ services:
     container_name: email-service
     env_file:
       - .env
+    logging: *default-logging
     restart: always
     mem_limit: 120m
     memswap_limit: 200m

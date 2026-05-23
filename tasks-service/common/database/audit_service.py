@@ -5,6 +5,9 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from typing import Optional
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from common.database.audit_log import AuditLog
 
@@ -35,20 +38,24 @@ def log_audit(
     Returns:
         Created AuditLog entry
     """
-    print(f"[AUDIT] Logging audit entry: {details}")
-    audit_entry = AuditLog(
-    organization_id=organization_id,
-    employee_id=employee_id,
-    role_type=role_type,
-    action=action,
-    resource_type=resource_type,
-    resource_id=resource_id,
-    details=json.dumps(details, default=str) if details else None,
-    created_at=datetime.now()
-)
-
-    db.add(audit_entry)
-    db.commit()
-    db.refresh(audit_entry)
-    return audit_entry
+    logger.info(f"📝 Audit Log: Action={action}, Resource={resource_type}:{resource_id}, User={employee_id}, Org={organization_id}")
+    try:
+        audit_entry = AuditLog(
+            organization_id=organization_id,
+            employee_id=employee_id,
+            role_type=role_type,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            details=json.dumps(details, default=str) if details else None,
+            created_at=datetime.now()
+        )
+        db.add(audit_entry)
+        db.commit()
+        db.refresh(audit_entry)
+        logger.info(f"✅ Audit log created successfully (ID: {audit_entry.id})")
+        return audit_entry
+    except Exception as e:
+        logger.error(f"❌ Failed to create audit log: {str(e)}")
+        raise
 

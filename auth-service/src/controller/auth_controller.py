@@ -4,6 +4,9 @@ Controller (API routes) for authentication endpoints.
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
+import logging
+
+logger = logging.getLogger(__name__)
 
 from common.database.db import get_db
 from common.auth.jwt import create_access_token, create_refresh_token, get_current_user, verify_refresh_token
@@ -37,6 +40,7 @@ async def register(
     
     try:
         user = auth_service.register_user(user_data)
+        logger.info(f"✅ User registered successfully: {user.email}")
         user_role = user.role if user.role else "Product Owner"
         org_id = user.organization_id
         
@@ -60,12 +64,14 @@ async def register(
             "user": user
         }
     except ValueError as e:
+        logger.warning(f"⚠️  User registration validation error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
         import traceback
+        logger.error(f"❌ User registration failed: {str(e)}\n{traceback.format_exc()}")
         error_detail = f"Registration failed: {str(e)}\n{traceback.format_exc()}"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -91,11 +97,13 @@ async def login(
     )
     
     if not user:
+        logger.warning(f"⚠️  Failed login attempt for email: {login_data.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Wrong credentials or user does not exist in the specified organization with the specified role"
         )
     
+    logger.info(f"✅ User logged in successfully: {user.email}")
     user_role = auth_service.get_user_role(user)
     org_id = auth_service.get_organization_id(user)
     

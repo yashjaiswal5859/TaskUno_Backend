@@ -5,6 +5,9 @@ from typing import Optional, Union
 from sqlalchemy.orm import Session
 import sys
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Add paths
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -28,80 +31,90 @@ class AuthService:
     
     def register_user(self, user_data: UserCreate) -> UserResponse:
         """Register a new user (Product Owner only)."""
-        if user_data.org_id:
-            organization = self.org_repository.get_by_id(user_data.org_id)
-            if not organization:
-                raise ValueError("Organization not found")
-        else:
-            existing_org = self.org_repository.get_by_name(user_data.organization)
-            if existing_org:
-                raise ValueError(f"Organization '{user_data.organization}' already exists. Please ask an existing owner to invite you, or use a different organization name.")
+        logger.info(f"📝 Registering new user: {user_data.email}")
+        try:
+            if user_data.org_id:
+                organization = self.org_repository.get_by_id(user_data.org_id)
+                if not organization:
+                    logger.error(f"❌ Organization not found: {user_data.org_id}")
+                    raise ValueError("Organization not found")
             else:
-                # Create organization first (will log audit after user is created)
-                organization = self.org_repository.create(user_data.organization)
-        
-        if self.repository.email_exists_in_organization(user_data.email, organization.id):
-            raise ValueError("User with this email already exists in this organization. Please use a different email or login with existing credentials.")
-        
-        hashed_password = get_password_hash(user_data.password)
-        role = "Product Owner"
-        
-        user_dict = {
-            "email": user_data.email,
-            "password": hashed_password,
-            "firstName": user_data.firstName,
-            "lastName": user_data.lastName,
-            "role": role,
-            "organization_id": organization.id
-        }
-        
-        new_user = self.repository.create(user_dict)
-        user_role = self.get_user_role(new_user)
-        org_id = self.get_organization_id(new_user)
-        
-        # Log audit entry for organization creation (if organization was just created)
-        if not user_data.org_id and organization:
+                existing_org = self.org_repository.get_by_name(user_data.organization)
+                if existing_org:
+                    logger.warning(f"⚠️  Organization already exists: {user_data.organization}")
+                    raise ValueError(f"Organization '{user_data.organization}' already exists. Please ask an existing owner to invite you, or use a different organization name.")
+                else:
+                    # Create organization first (will log audit after user is created)
+                    logger.info(f"📍 Creating new organization: {user_data.organization}")
+                    organization = self.org_repository.create(user_data.organization)
+            
+            if self.repository.email_exists_in_organization(user_data.email, organization.id):
+                logger.warning(f"⚠️  Email already exists in organization {organization.id}: {user_data.email}")
+                raise ValueError("User with this email already exists in this organization. Please use a different email or login with existing credentials.")
+            
+            hashed_password = get_password_hash(user_data.password)
+            role = "Product Owner"
+            
+            user_dict = {
+                "email": user_data.email,
+                "password": hashed_password,
+                "firstName": user_data.firstName,
+                "lastName": user_data.lastName,
+                "role": role,
+                "organization_id": organization.id
+            }
+            
+            new_user = self.repository.create(user_dict)
+            logger.info(f"✅ User created successfully: {new_user.email} (ID: {new_user.id})")
+            user_role = self.get_user_role(new_user)
+            org_id = self.get_organization_id(new_user)
+            
+            # Log audit entry for organization creation (if organization was just created)
+            if not user_data.org_id and organization:
+                log_audit(
+                    db=self.db,
+                    employee_id=new_user.id,
+                    role_type=user_role,
+                    action="organization_created",
+                    organization_id=organization.id,
+                    resource_type="organization",
+                    resource_id=organization.id,
+                    details={
+                        "name": organization.name,
+                        "created_during_registration": True
+                    }
+                )
+            
+            # Log audit entry for user registration
             log_audit(
                 db=self.db,
                 employee_id=new_user.id,
                 role_type=user_role,
-                action="organization_created",
-                organization_id=organization.id,
-                resource_type="organization",
-                resource_id=organization.id,
+                action="user_registered",
+                organization_id=org_id,
+                resource_type="user",
+                resource_id=new_user.id,
                 details={
-                    "name": organization.name,
-                    "created_during_registration": True
+                    "email": new_user.email,
+                    "role": user_role
                 }
             )
-        
-        # Log audit entry for user registration
-        log_audit(
-            db=self.db,
-            employee_id=new_user.id,
-            role_type=user_role,
-            action="user_registered",
-            organization_id=org_id,
-            resource_type="user",
-            resource_id=new_user.id,
-            details={
-                "email": new_user.email,
-                "role": user_role
-            }
-        )
-        
-        # Invalidate organization cache when new user is registered
-        if org_id:
-            invalidate_org_cache(org_id)
-        
-        return UserResponse(
-            id=new_user.id,
-            email=new_user.email,
-            firstName=new_user.firstName,
-            lastName=new_user.lastName,
-            role=user_role,
-            organization_id=org_id
-        )
+            
+            # Invalidate organization cache when new user is registered
+            if org_id:
+                invalidate_org_cache(org_id)
+            
+            return UserResponse(
+                id=new_user.id,
+                email=new_user.email,
+                firstName=new_user.firstName,
+                lastName=new_user.lastName,
+                role=user_role,
+                organization_id=org_id
+            )
+        except Exception as e:
+            logger.error(f"❌ User registration error: {str(e)}")
+            raise
     
     def authenticate_user(self, email: str, password: str, organization_id: Optional[int] = None, role: Optional[str] = None) -> Optional[Union[ProductOwner, Developer]]:
         """Authenticate a user with email, password, organization_id, and role."""

@@ -6,7 +6,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
 import os
+import logging
 from pathlib import Path
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s %(levelname)s [%(name)s] %(message)s")
+logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
+logger = logging.getLogger(__name__)
 
 # Initialize New Relic if license key is set (use absolute path to config)
 newrelic_config = Path(__file__).parent.parent / 'newrelic.ini'

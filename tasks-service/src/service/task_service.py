@@ -5,6 +5,9 @@ from typing import List, Optional
 from datetime import datetime, date
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.models import Task, TaskLog
 from src.repository.task_repository import TaskRepository, Project
@@ -26,129 +29,140 @@ class TaskService:
 
     async def create_task(self, task_data: TaskBase, employee_id: int, role_type: str, organization_id: int, token: str) -> Task:
         """Create a new task."""
-        # Verify project belongs to organization
-        project = self.db.query(Project).filter(Project.id == task_data.project_id).first()
-        if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
-        if project.organization_id != organization_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Project does not belong to your organization"
-            )
-        
-        # Verify developer belongs to organization (via Organization Service) - REQUIRED
+        logger.info(f"📝 Creating new task: {task_data.title} for organization {organization_id}")
         try:
-            headers = {"Authorization": f"Bearer {token}"}
-            developers = await organization_client.get("/organization/developers", headers=headers)
-            dev_found = any(d['id'] == task_data.assigned_to for d in developers)
-            if not dev_found:
+            # Verify project belongs to organization
+            project = self.db.query(Project).filter(Project.id == task_data.project_id).first()
+            if not project:
+                logger.error(f"❌ Project not found: {task_data.project_id}")
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Developer not found in your organization"
+                    detail="Project not found"
                 )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error verifying developer: {str(e)}"
-            )
-        
-        # Verify reporting_to (Product Owner) belongs to organization - REQUIRED
-        reporting_to_id = task_data.reporting_to
-        try:
-            headers = {"Authorization": f"Bearer {token}"}
-            product_owners = await organization_client.get("/organization/product-owners", headers=headers)
-            po_found = any(po['id'] == reporting_to_id for po in product_owners)
-            if not po_found:
+            if project.organization_id != organization_id:
+                logger.warning(f"⚠️  Project {task_data.project_id} does not belong to organization {organization_id}")
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Product Owner not found in your organization"
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Project does not belong to your organization"
                 )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error verifying product owner: {str(e)}"
-            )
-        
-        task_dict = {
-            "title": task_data.title,
-            "description": task_data.description,
-            "status": task_data.status,
-            "project_id": task_data.project_id,
-            "createdDate": datetime.now(),
-            "dueDate": task_data.dueDate,
-            "assigned_to": task_data.assigned_to,
-            "reporting_to": reporting_to_id
-        }
-        new_task = self.repository.create(task_dict)
-        
-        # Log audit entry - Product Owner created task with task ID
-        log_audit(
-            db=self.db,
-            employee_id=employee_id,
-            role_type=role_type,
-            action="task_created",
-            organization_id=organization_id,
-            resource_type="task",
-            resource_id=new_task.id,
-            details={
-                "message": f"Product Owner created task with id: {new_task.id}",
+            
+            # Verify developer belongs to organization (via Organization Service) - REQUIRED
+            try:
+                headers = {"Authorization": f"Bearer {token}"}
+                developers = await organization_client.get("/organization/developers", headers=headers)
+                dev_found = any(d['id'] == task_data.assigned_to for d in developers)
+                if not dev_found:
+                    logger.error(f"❌ Developer {task_data.assigned_to} not found in organization {organization_id}")
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Developer not found in your organization"
+                    )
+            except Exception as e:
+                logger.error(f"❌ Developer verification failed: {str(e)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Error verifying developer: {str(e)}"
+                )
+            
+            # Verify reporting_to (Product Owner) belongs to organization - REQUIRED
+            reporting_to_id = task_data.reporting_to
+            try:
+                headers = {"Authorization": f"Bearer {token}"}
+                product_owners = await organization_client.get("/organization/product-owners", headers=headers)
+                po_found = any(po['id'] == reporting_to_id for po in product_owners)
+                if not po_found:
+                    logger.error(f"❌ Product Owner {reporting_to_id} not found in organization {organization_id}")
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Product Owner not found in your organization"
+                    )
+            except Exception as e:
+                logger.error(f"❌ Product Owner verification failed: {str(e)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Error verifying product owner: {str(e)}"
+                )
+            
+            task_dict = {
                 "title": task_data.title,
+                "description": task_data.description,
                 "status": task_data.status,
                 "project_id": task_data.project_id,
+                "createdDate": datetime.now(),
+                "dueDate": task_data.dueDate,
                 "assigned_to": task_data.assigned_to,
                 "reporting_to": reporting_to_id
             }
-        )
-        
-        # Enqueue task created event for email notifications
-        try:
-            # Get email addresses
-            assigned_to_email = None
-            reporting_to_email = None
-            updated_by_email = None
-            organization_name = None
+            new_task = self.repository.create(task_dict)
+            logger.info(f"✅ Task created successfully: {new_task.title} (ID: {new_task.id})")
             
-            # Get updated_by email
-            if employee_id and token:
-                try:
-                    headers = {"Authorization": f"Bearer {token}"}
-                    # Try to get from developers first
-                    developers = await organization_client.get("/organization/developers", headers=headers)
-                    dev = next((d for d in developers if d['id'] == employee_id), None)
-                    if dev:
-                        updated_by_email = dev.get('email')
-                    else:
-                        # Try product owners
-                        product_owners = await organization_client.get("/organization/product-owners", headers=headers)
-                        po = next((p for p in product_owners if p['id'] == employee_id), None)
-                        if po:
-                            updated_by_email = po.get('email')
-                except Exception as e:
-                    print(f"[WARNING] Failed to get updated_by email: {str(e)}")
+            # Log audit entry - Product Owner created task with task ID
+            log_audit(
+                db=self.db,
+                employee_id=employee_id,
+                role_type=role_type,
+                action="task_created",
+                organization_id=organization_id,
+                resource_type="task",
+                resource_id=new_task.id,
+                details={
+                    "message": f"Product Owner created task with id: {new_task.id}",
+                    "title": task_data.title,
+                    "status": task_data.status,
+                    "project_id": task_data.project_id,
+                    "assigned_to": task_data.assigned_to,
+                    "reporting_to": reporting_to_id
+                }
+            )
             
-            # Get organization name
-            if organization_id and token:
-                try:
-                    headers = {"Authorization": f"Bearer {token}"}
-                    org_info = await organization_client.get(f"/organization/{organization_id}", headers=headers)
-                    if org_info:
-                        organization_name = org_info.get('name') or org_info.get('title')
-                except Exception as e:
-                    print(f"[WARNING] Failed to get organization name: {str(e)}")
+            # Enqueue task created event for email notifications
+            try:
+                # Get email addresses
+                assigned_to_email = None
+                reporting_to_email = None
+                updated_by_email = None
+                organization_name = None
+                
+                # Get updated_by email
+                if employee_id and token:
+                    try:
+                        headers = {"Authorization": f"Bearer {token}"}
+                        # Try to get from developers first
+                        developers = await organization_client.get("/organization/developers", headers=headers)
+                        dev = next((d for d in developers if d['id'] == employee_id), None)
+                        if dev:
+                            updated_by_email = dev.get('email')
+                        else:
+                            # Try product owners
+                            product_owners = await organization_client.get("/organization/product-owners", headers=headers)
+                            po = next((p for p in product_owners if p['id'] == employee_id), None)
+                            if po:
+                                updated_by_email = po.get('email')
+                    except Exception as e:
+                        logger.warning(f"⚠️  Failed to get updated_by email: {str(e)}")
             
-            if new_task.assigned_to and token:
-                try:
-                    headers = {"Authorization": f"Bearer {token}"}
-                    developers = await organization_client.get("/organization/developers", headers=headers)
-                    dev = next((d for d in developers if d['id'] == new_task.assigned_to), None)
-                    if dev:
-                        assigned_to_email = dev.get('email')
-                except Exception as e:
-                    print(f"[WARNING] Failed to get assigned_to email: {str(e)}")
-            
+                # Get organization name
+                if organization_id and token:
+                    try:
+                        headers = {"Authorization": f"Bearer {token}"}
+                        org_info = await organization_client.get(f"/organization/{organization_id}", headers=headers)
+                        if org_info:
+                            organization_name = org_info.get('name') or org_info.get('title')
+                    except Exception as e:
+                        logger.warning(f"⚠️  Failed to get organization name: {str(e)}")
+                
+                if new_task.assigned_to and token:
+                    try:
+                        headers = {"Authorization": f"Bearer {token}"}
+                        developers = await organization_client.get("/organization/developers", headers=headers)
+                        dev = next((d for d in developers if d['id'] == new_task.assigned_to), None)
+                        if dev:
+                            assigned_to_email = dev.get('email')
+                    except Exception as e:
+                        logger.warning(f"⚠️  Failed to get assigned_to email: {str(e)}")
+            except Exception as e:
+                logger.warning(f"⚠️  Failed while gathering notification emails: {str(e)}")
+
             if new_task.reporting_to and token:
                 try:
                     headers = {"Authorization": f"Bearer {token}"}
