@@ -120,6 +120,24 @@ jobs:
         script: |
           cd /tmp/deploy
           
+          # Ensure swap is enabled (prevents OOM kills on 1GB instance)
+          if [ ! -f /swapfile ]; then
+            echo "💾 Creating 512MB swap file..."
+            sudo fallocate -l 512M /swapfile
+            sudo chmod 600 /swapfile
+            sudo mkswap /swapfile
+            sudo swapon /swapfile
+            echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+            echo "✅ Swap enabled"
+          else
+            echo "✅ Swap already exists"
+          fi
+          
+          # Free up memory before loading new images
+          echo "🧹 Pruning old Docker resources..."
+          docker image prune -f
+          docker container prune -f
+          
           echo "📦 Loading Docker images..."
           docker load < api-gateway.tar.gz
           docker load < auth-service.tar.gz

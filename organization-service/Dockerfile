@@ -20,6 +20,6 @@ CMD sh -c '\
   else \
     echo "⚠️  Starting app WITHOUT New Relic..."; \
   fi; \
-  exec uvicorn src.main:app --host 0.0.0.0 --port 8002 --workers 1 --limit-max-requests 1000 --backlog 64'
+  exec uvicorn src.main:app --host 0.0.0.0 --port 8002 --workers 1 --backlog 64'
 
 

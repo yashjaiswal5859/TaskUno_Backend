@@ -39,9 +39,9 @@ services:
       - projects-service
       - email-service
     restart: always
-    mem_limit: 75m
-    mem_reservation: 50m
-    memswap_limit: 100m
+    mem_limit: 100m
+    mem_reservation: 64m
+    memswap_limit: 150m
 
   # -----------------------------
   # Auth Service
@@ -57,9 +57,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 75m
-    mem_reservation: 50m
-    memswap_limit: 100m
+    mem_limit: 100m
+    mem_reservation: 64m
+    memswap_limit: 150m
 
   # -----------------------------
   # Organization Service
@@ -75,9 +75,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 75m
-    mem_reservation: 50m
-    memswap_limit: 100m
+    mem_limit: 100m
+    mem_reservation: 64m
+    memswap_limit: 150m
 
   # -----------------------------
   # Tasks Service
@@ -93,9 +93,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 75m
-    mem_reservation: 50m
-    memswap_limit: 100m
+    mem_limit: 100m
+    mem_reservation: 64m
+    memswap_limit: 150m
 
   # -----------------------------
   # Projects Service
@@ -111,9 +111,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 75m
-    mem_reservation: 50m
-    memswap_limit: 100m
+    mem_limit: 100m
+    mem_reservation: 64m
+    memswap_limit: 150m
 
   # -----------------------------
   # Email Service
@@ -129,9 +129,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 75m
-    mem_reservation: 50m
-    memswap_limit: 100m
+    mem_limit: 100m
+    mem_reservation: 64m
+    memswap_limit: 150m
 
   # NOTE: New Relic infra agent removed to save ~128MB RAM.
   # Use CloudWatch logs (already configured above) for monitoring.

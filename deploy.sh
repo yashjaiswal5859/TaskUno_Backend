@@ -36,9 +36,9 @@ docker run -d \
   --network taskuno-network \
   -p 8000:8000 \
   --env-file .env \
-  --memory="75m" \
-  --memory-reservation="50m" \
-  --memory-swap="100m" \
+  --memory="100m" \
+  --memory-reservation="64m" \
+  --memory-swap="150m" \
   -e MALLOC_TRIM_THRESHOLD_=65536 \
   -e PYTHONDONTWRITEBYTECODE=1 \
   api-gateway:latest
@@ -51,9 +51,9 @@ docker run -d \
   --network taskuno-network \
   -p 8001:8001 \
   --env-file .env \
-  --memory="75m" \
-  --memory-reservation="50m" \
-  --memory-swap="100m" \
+  --memory="100m" \
+  --memory-reservation="64m" \
+  --memory-swap="150m" \
   -e MALLOC_TRIM_THRESHOLD_=65536 \
   -e PYTHONDONTWRITEBYTECODE=1 \
   auth-service:latest
@@ -66,9 +66,9 @@ docker run -d \
   --network taskuno-network \
   -p 8002:8002 \
   --env-file .env \
-  --memory="75m" \
-  --memory-reservation="50m" \
-  --memory-swap="100m" \
+  --memory="100m" \
+  --memory-reservation="64m" \
+  --memory-swap="150m" \
   -e MALLOC_TRIM_THRESHOLD_=65536 \
   -e PYTHONDONTWRITEBYTECODE=1 \
   organization-service:latest
@@ -81,9 +81,9 @@ docker run -d \
   --network taskuno-network \
   -p 8003:8003 \
   --env-file .env \
-  --memory="75m" \
-  --memory-reservation="50m" \
-  --memory-swap="100m" \
+  --memory="100m" \
+  --memory-reservation="64m" \
+  --memory-swap="150m" \
   -e MALLOC_TRIM_THRESHOLD_=65536 \
   -e PYTHONDONTWRITEBYTECODE=1 \
   tasks-service:latest
@@ -96,9 +96,9 @@ docker run -d \
   --network taskuno-network \
   -p 8004:8004 \
   --env-file .env \
-  --memory="75m" \
-  --memory-reservation="50m" \
-  --memory-swap="100m" \
+  --memory="100m" \
+  --memory-reservation="64m" \
+  --memory-swap="150m" \
   -e MALLOC_TRIM_THRESHOLD_=65536 \
   -e PYTHONDONTWRITEBYTECODE=1 \
   projects-service:latest
@@ -111,9 +111,9 @@ docker run -d \
   --network taskuno-network \
   -p 8005:8005 \
   --env-file .env \
-  --memory="75m" \
-  --memory-reservation="50m" \
-  --memory-swap="100m" \
+  --memory="100m" \
+  --memory-reservation="64m" \
+  --memory-swap="150m" \
   -e MALLOC_TRIM_THRESHOLD_=65536 \
   -e PYTHONDONTWRITEBYTECODE=1 \
   email-service:latest
