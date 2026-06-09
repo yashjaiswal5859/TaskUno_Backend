@@ -36,8 +36,11 @@ docker run -d \
   --network taskuno-network \
   -p 8000:8000 \
   --env-file .env \
-  --memory="120m" \
-  --memory-swap="200m" \
+  --memory="75m" \
+  --memory-reservation="50m" \
+  --memory-swap="100m" \
+  -e MALLOC_TRIM_THRESHOLD_=65536 \
+  -e PYTHONDONTWRITEBYTECODE=1 \
   api-gateway:latest
 
 # Start Auth Service
@@ -48,8 +51,11 @@ docker run -d \
   --network taskuno-network \
   -p 8001:8001 \
   --env-file .env \
-  --memory="120m" \
-  --memory-swap="200m" \
+  --memory="75m" \
+  --memory-reservation="50m" \
+  --memory-swap="100m" \
+  -e MALLOC_TRIM_THRESHOLD_=65536 \
+  -e PYTHONDONTWRITEBYTECODE=1 \
   auth-service:latest
 
 # Start Organization Service
@@ -60,8 +66,11 @@ docker run -d \
   --network taskuno-network \
   -p 8002:8002 \
   --env-file .env \
-  --memory="120m" \
-  --memory-swap="200m" \
+  --memory="75m" \
+  --memory-reservation="50m" \
+  --memory-swap="100m" \
+  -e MALLOC_TRIM_THRESHOLD_=65536 \
+  -e PYTHONDONTWRITEBYTECODE=1 \
   organization-service:latest
 
 # Start Tasks Service
@@ -72,8 +81,11 @@ docker run -d \
   --network taskuno-network \
   -p 8003:8003 \
   --env-file .env \
-  --memory="120m" \
-  --memory-swap="200m" \
+  --memory="75m" \
+  --memory-reservation="50m" \
+  --memory-swap="100m" \
+  -e MALLOC_TRIM_THRESHOLD_=65536 \
+  -e PYTHONDONTWRITEBYTECODE=1 \
   tasks-service:latest
 
 # Start Projects Service
@@ -84,8 +96,11 @@ docker run -d \
   --network taskuno-network \
   -p 8004:8004 \
   --env-file .env \
-  --memory="120m" \
-  --memory-swap="200m" \
+  --memory="75m" \
+  --memory-reservation="50m" \
+  --memory-swap="100m" \
+  -e MALLOC_TRIM_THRESHOLD_=65536 \
+  -e PYTHONDONTWRITEBYTECODE=1 \
   projects-service:latest
 
 # Start Email Service
@@ -96,30 +111,15 @@ docker run -d \
   --network taskuno-network \
   -p 8005:8005 \
   --env-file .env \
-  --memory="120m" \
-  --memory-swap="200m" \
+  --memory="75m" \
+  --memory-reservation="50m" \
+  --memory-swap="100m" \
+  -e MALLOC_TRIM_THRESHOLD_=65536 \
+  -e PYTHONDONTWRITEBYTECODE=1 \
   email-service:latest
 
-# Start New Relic Infrastructure Agent (if not running)
-if ! docker ps | grep -q newrelic-infra; then
-  echo "📊 Starting New Relic Infrastructure Agent..."
-  docker run -d \
-    --name newrelic-infra \
-    --privileged \
-    --network host \
-    --pid host \
-    --restart unless-stopped \
-    --memory="128m" \
-    --memory-swap="256m" \
-    -e NRIA_LICENSE_KEY="${NEW_RELIC_LICENSE_KEY}" \
-    -e NRIA_DISPLAY_NAME=taskuno-host \
-    -v /:/host:ro \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    newrelic/infrastructure:latest
-  echo "✅ New Relic started"
-else
-  echo "✅ New Relic already running"
-fi
+# NOTE: New Relic infra agent removed to save ~128MB RAM on 1GB EC2.
+# Use CloudWatch logs (configured via awslogs driver) for monitoring.
 
 echo "✅ All services started!"
 echo ""

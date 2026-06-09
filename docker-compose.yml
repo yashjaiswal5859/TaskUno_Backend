@@ -8,6 +8,14 @@ x-logging: &default-logging
     awslogs-create-group: "true"
     awslogs-stream-prefix: ${CLOUDWATCH_LOG_STREAM_PREFIX}
 
+# ============================================================
+# Memory Budget for 1GB (1024MB) EC2 Free Tier:
+#   OS + Docker engine overhead:  ~300MB
+#   6 services × 75MB hard limit: ~450MB
+#   Headroom / buffer:            ~274MB
+#   Total:                        ~1024MB
+# ============================================================
+
 services:
   # -----------------------------
   # API Gateway
@@ -19,6 +27,10 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MALLOC_TRIM_THRESHOLD_=65536
+      - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     depends_on:
       - auth-service
@@ -27,8 +39,9 @@ services:
       - projects-service
       - email-service
     restart: always
-    mem_limit: 120m
-    memswap_limit: 200m
+    mem_limit: 75m
+    mem_reservation: 50m
+    memswap_limit: 100m
 
   # -----------------------------
   # Auth Service
@@ -38,10 +51,15 @@ services:
     container_name: auth-service
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MALLOC_TRIM_THRESHOLD_=65536
+      - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 120m
-    memswap_limit: 200m
+    mem_limit: 75m
+    mem_reservation: 50m
+    memswap_limit: 100m
 
   # -----------------------------
   # Organization Service
@@ -51,10 +69,15 @@ services:
     container_name: organization-service
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MALLOC_TRIM_THRESHOLD_=65536
+      - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 120m
-    memswap_limit: 200m
+    mem_limit: 75m
+    mem_reservation: 50m
+    memswap_limit: 100m
 
   # -----------------------------
   # Tasks Service
@@ -64,10 +87,15 @@ services:
     container_name: tasks-service
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MALLOC_TRIM_THRESHOLD_=65536
+      - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 120m
-    memswap_limit: 200m
+    mem_limit: 75m
+    mem_reservation: 50m
+    memswap_limit: 100m
 
   # -----------------------------
   # Projects Service
@@ -77,10 +105,15 @@ services:
     container_name: projects-service
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MALLOC_TRIM_THRESHOLD_=65536
+      - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 120m
-    memswap_limit: 200m
+    mem_limit: 75m
+    mem_reservation: 50m
+    memswap_limit: 100m
 
   # -----------------------------
   # Email Service
@@ -90,26 +123,15 @@ services:
     container_name: email-service
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MALLOC_TRIM_THRESHOLD_=65536
+      - PYTHONDONTWRITEBYTECODE=1
     logging: *default-logging
     restart: always
-    mem_limit: 120m
-    memswap_limit: 200m
+    mem_limit: 75m
+    mem_reservation: 50m
+    memswap_limit: 100m
 
-  # -----------------------------
-  # New Relic Infrastructure Agent
-  # -----------------------------
-  newrelic-infra:
-    image: newrelic/infrastructure:latest
-    container_name: newrelic-infra
-    privileged: true
-    network_mode: host
-    pid: host
-    restart: unless-stopped
-    mem_limit: 128m
-    memswap_limit: 256m
-    environment:
-      - NRIA_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
-      - NRIA_DISPLAY_NAME=taskuno-host
-    volumes:
-      - "/:/host:ro"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+  # NOTE: New Relic infra agent removed to save ~128MB RAM.
+  # Use CloudWatch logs (already configured above) for monitoring.
