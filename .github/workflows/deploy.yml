@@ -116,7 +116,7 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         port: 22
-        command_timeout: 10m
+        command_timeout: 20m
         script: |
           cd /tmp/deploy
           
@@ -133,11 +133,15 @@ jobs:
             echo "✅ Swap already exists"
           fi
           
-          # Free up memory before loading new images
-          echo "🧹 Pruning old Docker resources..."
-          docker image prune -f
-          docker container prune -f
+          # 1. FULL DOCKER RESET — clean slate
+          echo "🧹 Resetting Docker (removing everything)..."
+          docker stop $(docker ps -aq) 2>/dev/null || true
+          docker rm -f $(docker ps -aq) 2>/dev/null || true
+          docker rmi -f $(docker images -aq) 2>/dev/null || true
+          docker system prune -af --volumes 2>/dev/null || true
+          echo "✅ Docker reset complete"
           
+          # 2. Load fresh images
           echo "📦 Loading Docker images..."
           docker load < api-gateway.tar.gz
           docker load < auth-service.tar.gz
@@ -147,15 +151,12 @@ jobs:
           docker load < email-service.tar.gz
           echo "✅ Images loaded"
           
-          echo "🛑 Stopping old containers..."
-          docker stop api-gateway auth-service organization-service tasks-service projects-service email-service 2>/dev/null || true
-          docker rm api-gateway auth-service organization-service tasks-service projects-service email-service 2>/dev/null || true
-          
-          echo "🚀 Starting new containers..."
+          # 3. Start containers
+          echo "🚀 Starting containers..."
           chmod +x deploy.sh
           ./deploy.sh
           
-          echo "🧹 Cleaning up..."
+          # 4. Cleanup deploy files
           rm -f *.tar.gz
           
           echo "✅ Deployment complete!"
