@@ -13,12 +13,5 @@ COPY . .
 # Expose port
 EXPOSE 8005
 
-# Run the application - New Relic is initialized in code if license key is set
-CMD sh -c '\
-  if [ -n "$NEW_RELIC_LICENSE_KEY" ] && [ -f newrelic.ini ]; then \
-    echo "✅ Starting app with New Relic (initialized in code)..."; \
-  else \
-    echo "⚠️  Starting app WITHOUT New Relic..."; \
-  fi; \
-  exec uvicorn src.main:app --host 0.0.0.0 --port 8005 --workers 1 --backlog 64'
-
+# Run the application
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8005", "--workers", "1", "--backlog", "64"]

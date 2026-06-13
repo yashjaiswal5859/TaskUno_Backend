@@ -11,19 +11,11 @@ import time
 import os
 import logging
 import asyncio
-from datetime import datetime
-from pathlib import Path
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s %(levelname)s [%(name)s] %(message)s")
 logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
-logger = logging.getLogger(__name__)
 
-# Initialize New Relic if license key is set (use absolute path to config)
-newrelic_config = Path(__file__).parent.parent / 'newrelic.ini'
-if os.getenv('NEW_RELIC_LICENSE_KEY') and newrelic_config.exists():
-    import newrelic.agent
-    newrelic.agent.initialize(str(newrelic_config))
 from common.middleware.rate_limiter import setup_rate_limiter
 
 # Service URLs from environment variables

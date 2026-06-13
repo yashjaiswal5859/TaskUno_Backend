@@ -118,9 +118,6 @@ docker run -d \
   -e PYTHONDONTWRITEBYTECODE=1 \
   email-service:latest
 
-# NOTE: New Relic infra agent removed to save ~128MB RAM on 1GB EC2.
-# Use CloudWatch logs (configured via awslogs driver) for monitoring.
-
 echo "✅ All services started!"
 echo ""
 echo "📊 Container Status:"

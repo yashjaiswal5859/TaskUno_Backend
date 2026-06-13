@@ -13,12 +13,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
 
-# Initialize New Relic if license key is set (use absolute path to config)
-newrelic_config = Path(__file__).parent.parent / 'newrelic.ini'
-if os.getenv('NEW_RELIC_LICENSE_KEY') and newrelic_config.exists():
-    import newrelic.agent
-    newrelic.agent.initialize(str(newrelic_config))
-
 # Load .env file from root directory
 env_path = Path(__file__).parent.parent.parent / ".env"
 if env_path.exists():
